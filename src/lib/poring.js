@@ -1,3 +1,5 @@
+'use strict';
+
 const poring = (() => {
 
     // #region Signals
