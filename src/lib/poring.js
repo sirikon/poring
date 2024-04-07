@@ -96,7 +96,7 @@ const poring = (() => {
 
         execute();
 
-        return dispose
+        return { dispose }
     }
 
     function compute(cb) {
@@ -117,16 +117,23 @@ const poring = (() => {
         signalContext.createdEffects = [];
 
         cb();
-        const result = {
-            signals: signalContext.createdSignals,
-            effects: signalContext.createdEffects
-        }
+        const signals = signalContext.createdSignals;
+        const effects = signalContext.createdEffects;
 
         signalContext.params = oldParams;
         signalContext.createdSignals = oldCreatedSignals;
         signalContext.createdEffects = oldCreatedEffects;
 
-        return result;
+        function dispose() {
+            for(const signal of signals) {
+                signal.dispose();
+            }
+            for(const effect of effects) {
+                effect.dispose();
+            }
+        }
+
+        return { dispose };
     }
 
     // #endregion
@@ -300,17 +307,14 @@ const poring = (() => {
             constructor() {
                 super();
                 this.attributeSignals = null;
-                this.signals = null;
-                this.effects = null;
+                this.scope = null;
             }
 
             build() {
-                const { signals, effects } = scope({ component: this }, () => {
+                this.scope = scope({ component: this }, () => {
                     this.attributeSignals = Object.fromEntries(attributes.map(attr => [attr, signal(this.getAttribute(attr))]));
                     logic(this.attributeSignals, this);
                 })
-                this.signals = signals;
-                this.effects = effects;
             }
 
             attributeChangedCallback(name, oldValue, newValue) {
@@ -323,12 +327,7 @@ const poring = (() => {
             }
 
             disconnectedCallback() {
-                for(const signal of this.signals) {
-                    signal.dispose();
-                }
-                for(const effect of this.effects) {
-                    effect.dispose();
-                }
+                this.scope.dispose();
             }
         }
         customElements.define(tag, Component);
