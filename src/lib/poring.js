@@ -57,6 +57,19 @@ const poring = (() => {
     }
     function signal(initialValue) { return new Signal(initialValue); }
 
+    function track(cb) {
+        const oldAccessedSignals = signalContext.accessedSignals;
+    
+        signalContext.accessedSignals = [];
+    
+        cb();
+        const accessedSignals = signalContext.accessedSignals;
+    
+        signalContext.accessedSignals = oldAccessedSignals;
+    
+        return accessedSignals;
+    }
+
     function effect(cb) {
         const accessedSignals = [];
 
@@ -64,16 +77,11 @@ const poring = (() => {
             for (const signal of accessedSignals) {
                 signal.unlisten(execute);
             }
-
-            const oldAccessedSignals = signalContext.accessedSignals;
-            signalContext.accessedSignals = [];
-            cb();
-            for (const signal of signalContext.accessedSignals) {
+            accessedSignals.splice(0, accessedSignals.length);
+            accessedSignals.push(...track(cb))
+            for (const signal of accessedSignals) {
                 signal.listen(execute);
             }
-            accessedSignals.splice(0, accessedSignals.length);
-            accessedSignals.push(...signalContext.accessedSignals);
-            signalContext.accessedSignals = oldAccessedSignals;
         }
 
         function dispose() {
@@ -96,6 +104,28 @@ const poring = (() => {
         effect(() => {
             result.set(cb())
         })
+        return result;
+    }
+
+    function scope(params, cb) {
+        const oldParams = signalContext.params;
+        const oldCreatedSignals = signalContext.createdSignals;
+        const oldCreatedEffects = signalContext.createdEffects;
+
+        signalContext.params = params;
+        signalContext.createdSignals = [];
+        signalContext.createdEffects = [];
+
+        cb();
+        const result = {
+            signals: signalContext.createdSignals,
+            effects: signalContext.createdEffects
+        }
+
+        signalContext.params = oldParams;
+        signalContext.createdSignals = oldCreatedSignals;
+        signalContext.createdEffects = oldCreatedEffects;
+
         return result;
     }
 
@@ -275,21 +305,12 @@ const poring = (() => {
             }
 
             build() {
-                const oldParams = signalContext.params;
-                const oldCreatedSignals = signalContext.createdSignals;
-                const oldCreatedEffects = signalContext.createdEffects;
-                signalContext.params = { component: this };
-                signalContext.createdSignals = [];
-                signalContext.createdEffects = [];
-
-                this.attributeSignals = Object.fromEntries(attributes.map(attr => [attr, signal(this.getAttribute(attr))]));
-                logic(this.attributeSignals, this);
-
-                this.signals = signalContext.createdSignals;
-                this.effects = signalContext.createdEffects;
-                signalContext.params = oldParams;
-                signalContext.createdSignals = oldCreatedSignals;
-                signalContext.createdEffects = oldCreatedEffects;
+                const { signals, effects } = scope({ component: this }, () => {
+                    this.attributeSignals = Object.fromEntries(attributes.map(attr => [attr, signal(this.getAttribute(attr))]));
+                    logic(this.attributeSignals, this);
+                })
+                this.signals = signals;
+                this.effects = effects;
             }
 
             attributeChangedCallback(name, oldValue, newValue) {
