@@ -67,22 +67,19 @@ const poring = (() => {
                 ? _arg(this.value)
                 : _arg;
             this.value = newValue;
-            console.log(this.listeners);
-            for (const listener of this.listeners) {
-                console.log(listener);
+            const listeners = [...this.listeners];
+            for (const listener of listeners) {
                 listener();
             }
         }
 
         listen(cb) {
-            console.log('Listening', cb);
             if (this.listeners.indexOf(cb) === -1) {
                 this.listeners.push(cb);
             }
         }
 
         unlisten(cb) {
-            console.log('Unlistening', cb);
             const pos = this.listeners.indexOf(cb);
             if (pos >= 0) {
                 this.listeners.splice(pos, 1);
@@ -96,19 +93,21 @@ const poring = (() => {
     function signal(initialValue) { return new Signal(initialValue); }
 
     function effect(cb) {
-        let accessedSignals = [];
+        const accessedSignals = [];
 
         function execute() {
-            const oldAccessedSignals = context.accessedSignals;
-            context.accessedSignals = [];
-            cb();
             for (const signal of accessedSignals) {
                 signal.unlisten(execute);
             }
+
+            const oldAccessedSignals = context.accessedSignals;
+            context.accessedSignals = [];
+            cb();
             for (const signal of context.accessedSignals) {
                 signal.listen(execute);
             }
-            accessedSignals = context.accessedSignals;
+            accessedSignals.splice(0, accessedSignals.length);
+            accessedSignals.push(...context.accessedSignals);
             context.accessedSignals = oldAccessedSignals;
         }
 
@@ -275,7 +274,6 @@ const poring = (() => {
     function renderer(cb) {
         const component = context.params.component;
         effect(() => {
-            console.log('Rendering!');
             patchDom(component, cb())
         })
     }
