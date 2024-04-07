@@ -2,25 +2,29 @@ const poring = (() => {
 
     // #region Signals
 
-    const signalContext = {
+    const scopeContext = {
+        active: false,
         params: null,
         createdSignals: null,
         createdEffects: null,
-        accessedSignals: null
     };
+
+    const trackingContext = {
+        accessedSignals: null
+    }
 
     class Signal {
         constructor(initialValue) {
             this.value = initialValue == null ? null : initialValue;
             this.listeners = [];
-            if (signalContext.createdSignals != null) {
-                signalContext.createdSignals.push(this);
+            if (scopeContext.active) {
+                scopeContext.createdSignals.push(this);
             }
         }
 
         get() {
-            if (signalContext.accessedSignals != null && signalContext.accessedSignals.indexOf(this) === -1) {
-                signalContext.accessedSignals.push(this);
+            if (trackingContext.accessedSignals != null && trackingContext.accessedSignals.indexOf(this) === -1) {
+                trackingContext.accessedSignals.push(this);
             }
             return this.value;
         }
@@ -58,14 +62,14 @@ const poring = (() => {
     function signal(initialValue) { return new Signal(initialValue); }
 
     function track(cb) {
-        const oldAccessedSignals = signalContext.accessedSignals;
+        const oldAccessedSignals = trackingContext.accessedSignals;
     
-        signalContext.accessedSignals = [];
+        trackingContext.accessedSignals = [];
     
         cb();
-        const accessedSignals = signalContext.accessedSignals;
+        const accessedSignals = trackingContext.accessedSignals;
     
-        signalContext.accessedSignals = oldAccessedSignals;
+        trackingContext.accessedSignals = oldAccessedSignals;
     
         return accessedSignals;
     }
@@ -90,8 +94,8 @@ const poring = (() => {
             }
         }
 
-        if (signalContext.createdEffects != null) {
-            signalContext.createdEffects.push({dispose});
+        if (scopeContext.active) {
+            scopeContext.createdEffects.push({dispose});
         }
 
         execute();
@@ -100,36 +104,45 @@ const poring = (() => {
     }
 
     function compute(cb) {
-        let result = signal()
-        effect(() => {
-            result.set(cb())
+        let s = signal()
+        const e = effect(() => {
+            s.set(cb())
         })
-        return result;
+        return {
+            get: () => s.get(),
+            dispose: () => {
+                e.dispose();
+                s.dispose();
+            }
+        };
     }
 
     function scope(params, cb) {
-        const oldParams = signalContext.params;
-        const oldCreatedSignals = signalContext.createdSignals;
-        const oldCreatedEffects = signalContext.createdEffects;
+        const oldActive = scopeContext.active;
+        const oldParams = scopeContext.params;
+        const oldCreatedSignals = scopeContext.createdSignals;
+        const oldCreatedEffects = scopeContext.createdEffects;
 
-        signalContext.params = params;
-        signalContext.createdSignals = [];
-        signalContext.createdEffects = [];
+        scopeContext.active = true;
+        scopeContext.params = params;
+        scopeContext.createdSignals = [];
+        scopeContext.createdEffects = [];
 
         cb();
-        const signals = signalContext.createdSignals;
-        const effects = signalContext.createdEffects;
+        const signals = scopeContext.createdSignals;
+        const effects = scopeContext.createdEffects;
 
-        signalContext.params = oldParams;
-        signalContext.createdSignals = oldCreatedSignals;
-        signalContext.createdEffects = oldCreatedEffects;
+        scopeContext.active = oldActive;
+        scopeContext.params = oldParams;
+        scopeContext.createdSignals = oldCreatedSignals;
+        scopeContext.createdEffects = oldCreatedEffects;
 
         function dispose() {
-            for(const signal of signals) {
-                signal.dispose();
-            }
             for(const effect of effects) {
                 effect.dispose();
+            }
+            for(const signal of signals) {
+                signal.dispose();
             }
         }
 
@@ -334,7 +347,7 @@ const poring = (() => {
     }
 
     function renderer(cb) {
-        const component = signalContext.params.component;
+        const component = scopeContext.params.component;
         effect(() => {
             patchDom(component, cb())
         })
