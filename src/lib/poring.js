@@ -78,9 +78,17 @@ const poring = (() => {
 
     function effect(cb) {
         const currentAccessedSignals = [];
+        let cleanup_func = null;
+
+        function cleanup() {
+            typeof cleanup_func === "function" && cleanup_func();
+        }
 
         function execute() {
-            const newAccessedSignals = track(cb);
+            cleanup();
+            const newAccessedSignals = track(() => {
+                cleanup_func = cb();
+            });
 
             for(let i = currentAccessedSignals.length - 1; i >= 0; i--) {
                 const signal = currentAccessedSignals[i];
@@ -102,6 +110,7 @@ const poring = (() => {
             for (const signal of currentAccessedSignals) {
                 signal.unlisten(execute);
             }
+            cleanup();
         }
 
         if (scopeContext.active) {
@@ -110,7 +119,7 @@ const poring = (() => {
 
         execute();
 
-        return { dispose }
+        return { dispose, execute };
     }
 
     function compute(cb) {
@@ -120,6 +129,7 @@ const poring = (() => {
         })
         return {
             get: () => s.get(),
+            execute: () => e.execute(),
             dispose: () => {
                 e.dispose();
                 s.dispose();
@@ -356,14 +366,18 @@ const poring = (() => {
         customElements.define(tag, Component);
     }
 
-    function renderer(cb) {
+    function baseRenderer(cb) {
         const component = scopeContext.params.component;
         effect(() => {
-            patchDom(component, cb())
+            cb(component)
         })
+    }
+
+    function renderer(cb) {
+        baseRenderer((c) => patchDom(c, cb()))
     }
 
     // #endregion    
 
-    return { signal, effect, compute, component, h, renderer, patchDom }
+    return { signal, effect, compute, component, h, baseRenderer, renderer, patchDom }
 })();
