@@ -105,6 +105,30 @@ const poring = (() => {
 
     const EVENT_LISTENER_ATTRIBUTES = ["onclick", "onchange", "oninput"];
 
+    const ELEMENT_ODDITIES = {
+        'input': {
+            onBuild: (el, props) => {
+                if (props.type === 'checkbox') {
+                    props.checked
+                        ? el.setAttribute('checked', '')
+                        : el.removeAttribute('checked');
+                    el.checked = !!props.checked;
+                }
+            },
+            onPatch: (oldEl, newEl) => {
+                const type = oldEl.getAttribute('type');
+                if (type === 'text') {
+                    if (oldEl.value !== newEl.value) {
+                        oldEl.value = newEl.value;
+                    }
+                }
+                if (type === 'checkbox') {
+                    oldEl.checked = newEl.checked;
+                }
+            }
+        }
+    }
+
     function h(tag, _props, _children) {
         const props = _props || {};
         const children = normalizeChildren(_children);
@@ -114,12 +138,11 @@ const poring = (() => {
         for (const key in props) {
             if (EVENT_LISTENER_ATTRIBUTES.indexOf(key) >= 0) {
                 el[key] = props[key];
-            } else if (tag === 'input' && props.type === 'checkbox' && key === 'checked') {
-                props[key] && el.setAttribute(key, '');
             } else {
                 el.setAttribute(key, props[key]);
             }
         }
+        ELEMENT_ODDITIES[tag]?.onBuild(el, props);
 
         for (const _child of children) {
             if (_child == null || typeof _child === "boolean") {
@@ -187,15 +210,6 @@ const poring = (() => {
                 }
                 for (const attr of newNodeAttributeNames) {
                     oldNode.setAttribute(attr, newNode.getAttribute(attr));
-
-                    if (attr === 'value' && newNodeType === 'input') {
-                        if (oldNode.value !== newNode.value) {
-                            oldNode.value = newNode.value;
-                        }
-                    }
-                }
-                if (oldNodeType === 'input' && oldNode.getAttribute('type') === 'checkbox') {
-                    oldNode.checked = oldNode.hasAttribute('checked');
                 }
             }
 
@@ -211,6 +225,8 @@ const poring = (() => {
             if (newNodeContent != null && newNodeContent !== getNodeTextContent(oldNode)) {
                 oldNode.textContent = newNodeContent;
             }
+
+            ELEMENT_ODDITIES[newNodeType]?.onPatch(oldNode, newNode);
 
             if (newNode.childNodes.length === 0) {
                 oldNode.innerHTML = '';

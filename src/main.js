@@ -9,8 +9,6 @@ const userName = signal("John");
 const greeterEnabled = signal(false);
 
 component('x-root', [], () => {
-    
-
     renderer(() => h('div', {}, [
         h('h1', {}, `Hello ${userName.get()}!`),
         h('input', {
