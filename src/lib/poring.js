@@ -75,21 +75,29 @@ const poring = (() => {
     }
 
     function effect(cb) {
-        const accessedSignals = [];
+        const currentAccessedSignals = [];
 
         function execute() {
-            for (const signal of accessedSignals) {
-                signal.unlisten(execute);
+            const newAccessedSignals = track(cb);
+
+            for(let i = currentAccessedSignals.length - 1; i >= 0; i--) {
+                const signal = currentAccessedSignals[i];
+                if (newAccessedSignals.indexOf(signal) === -1) {
+                    signal.unlisten(execute);
+                    currentAccessedSignals.splice(i, 1);
+                }
             }
-            accessedSignals.splice(0, accessedSignals.length);
-            accessedSignals.push(...track(cb))
-            for (const signal of accessedSignals) {
-                signal.listen(execute);
+
+            for (const signal of newAccessedSignals) {
+                if (currentAccessedSignals.indexOf(signal) === -1) {
+                    signal.listen(execute);
+                    currentAccessedSignals.push(signal);
+                }
             }
         }
 
         function dispose() {
-            for (const signal of accessedSignals) {
+            for (const signal of currentAccessedSignals) {
                 signal.unlisten(execute);
             }
         }
