@@ -114,6 +114,8 @@ const poring = (() => {
         for (const key in props) {
             if (EVENT_LISTENER_ATTRIBUTES.indexOf(key) >= 0) {
                 el[key] = props[key];
+            } else if (tag === 'input' && props.type === 'checkbox' && key === 'checked') {
+                props[key] && el.setAttribute(key, '');
             } else {
                 el.setAttribute(key, props[key]);
             }
@@ -191,6 +193,9 @@ const poring = (() => {
                             oldNode.value = newNode.value;
                         }
                     }
+                }
+                if (oldNodeType === 'input' && oldNode.getAttribute('type') === 'checkbox') {
+                    oldNode.checked = oldNode.hasAttribute('checked');
                 }
             }
 
