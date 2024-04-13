@@ -1,15 +1,15 @@
 const h = poring.h;
-const signal = poring.signal;
-const effect = poring.effect;
-const compute = poring.compute;
+const useSignal = poring.useSignal;
+const useEffect = poring.useEffect;
+const useComputed = poring.useComputed;
 const component = poring.component;
-const renderer = poring.renderer;
+const useRenderer = poring.useRenderer;
 
-const userName = signal("John");
-const greeterEnabled = signal(false);
+const userName = useSignal("John");
+const greeterEnabled = useSignal(false);
 
 component('x-root', [], () => {
-    renderer(() => h('div', {}, [
+    useRenderer(() => h('div', {}, [
         h('h1', {}, `Hello ${userName.get()}!`),
         h('input', {
             type: 'checkbox',
@@ -23,9 +23,9 @@ component('x-root', [], () => {
 })
 
 component('x-greeter', [], () => {
-    const userSurname = signal("Doe");
-    const enableSurname = signal(true);
-    const userFullName = compute(() => {
+    const userSurname = useSignal("Doe");
+    const enableSurname = useSignal(true);
+    const userFullName = useComputed(() => {
         const result = [userName.get()]
         if (enableSurname.get()) {
             result.push(userSurname.get())
@@ -33,7 +33,7 @@ component('x-greeter', [], () => {
         return result.join(' ');
     });
 
-    renderer(() => h('div', {}, [
+    useRenderer(() => h('div', {}, [
         h('input', {type: 'text', value: userName.get(), oninput: (e) => { userName.set(e.target.value); }}),
         h('br'),
         h('input', {type: 'text', value: userSurname.get(), oninput: (e) => { userSurname.set(e.target.value); }}),
