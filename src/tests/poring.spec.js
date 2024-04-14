@@ -83,6 +83,22 @@ describe("Rendering", () => {
         },
         h("span", "Hello"),
       ],
+      [
+        {
+          tag: "div",
+          attributes: {},
+          properties: {},
+          children: [
+            {
+              tag: "span",
+              attributes: {},
+              properties: {},
+              children: ["Hello"],
+            },
+          ],
+        },
+        h("div", [h("span", "Hello")]),
+      ],
     ];
 
     for (let i = 0; i < testCases.length; i++) {
