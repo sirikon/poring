@@ -17,9 +17,10 @@ const STATIC_ROUTES = [
 
 async function main() {
   startHttpServer(async (req, res) => {
+    const url = new URL("internal:" + req.url).pathname;
     for (const [prefix, dir] of STATIC_ROUTES) {
-      if (req.url.startsWith(prefix)) {
-        replyStatic(dir, req.url.substring(prefix.length), res);
+      if (url.startsWith(prefix)) {
+        replyStatic(dir, url.substring(prefix.length), res);
         return;
       }
     }
