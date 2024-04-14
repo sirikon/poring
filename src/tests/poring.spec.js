@@ -50,8 +50,45 @@ describe("Computed", () => {
 
 describe("Rendering", () => {
   describe("h", () => {
-    it("works properly", () => {
-      console.log(h("tag"));
-    });
+    const testCases = [
+      [
+        {
+          tag: "tag",
+          attributes: {},
+          properties: {},
+          children: [],
+        },
+        h("tag"),
+      ],
+      [
+        {
+          tag: "input",
+          attributes: {
+            type: "text",
+            id: "testing",
+          },
+          properties: {
+            value: "John Doe",
+          },
+          children: [],
+        },
+        h("input", { type: "text", id: "testing" }, { value: "John Doe" }),
+      ],
+      [
+        {
+          tag: "span",
+          attributes: {},
+          properties: {},
+          children: ["Hello"],
+        },
+        h("span", "Hello"),
+      ],
+    ];
+
+    for (let i = 0; i < testCases.length; i++) {
+      it(`test case #${i + 1}`, () => {
+        assertEqual(testCases[i][0], testCases[i][1]);
+      });
+    }
   });
 });

@@ -5,8 +5,8 @@ const greeterEnabled = useSignal(false);
 
 component("x-root", [], () => {
   useRenderer(() =>
-    h("div", null, null, [
-      h("h1", null, null, `Hello ${userName.get()}!`),
+    h("div", [
+      h("h1", `Hello ${userName.get()}!`),
       h(
         "input",
         {
@@ -18,7 +18,7 @@ component("x-root", [], () => {
           onchange: (e) => greeterEnabled.set(e.target.checked),
         }
       ),
-      h("label", { for: "greeter-checkbox" }, null, "Enable greeter"),
+      h("label", { for: "greeter-checkbox" }, "Enable greeter"),
       greeterEnabled.get() && h("x-greeter"),
     ])
   );
@@ -36,7 +36,7 @@ component("x-greeter", [], () => {
   });
 
   useRenderer(() =>
-    h("div", null, null, [
+    h("div", [
       h(
         "input",
         {
@@ -73,8 +73,8 @@ component("x-greeter", [], () => {
           onchange: (e) => enableSurname.set(e.target.checked),
         }
       ),
-      h("label", { for: "enable-surname-checkbox" }, null, "Enable surname"),
-      h("pre", null, null, [userFullName.get()]),
+      h("label", { for: "enable-surname-checkbox" }, "Enable surname"),
+      h("pre", userFullName.get()),
     ])
   );
 });

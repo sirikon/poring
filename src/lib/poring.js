@@ -177,10 +177,30 @@ const poring = (() => {
 
   function h() {
     const tag = arguments[0];
-    const attributes = arguments[1] || {};
-    const properties = arguments[2] || {};
-    const children = arguments[arguments.length - 1] || [];
+    let attributes = {};
+    let properties = {};
+    let children = [];
+
+    if (arguments.length >= 2 && isObject(arguments[1])) {
+      attributes = arguments[1];
+    }
+    if (arguments.length >= 3 && isObject(arguments[2])) {
+      properties = arguments[2];
+    }
+    if (
+      arguments.length > 1 &&
+      (Array.isArray(arguments[arguments.length - 1]) ||
+        ["string", "number"].includes(typeof arguments[arguments.length - 1]))
+    ) {
+      const arg = arguments[arguments.length - 1];
+      children = Array.isArray(arg) ? arg : [arg];
+    }
+
     return { tag, attributes, properties, children };
+  }
+
+  function isObject(v) {
+    return typeof v === "object" && !Array.isArray(v);
   }
 
   function normalizeVNodes(_vNodes) {
