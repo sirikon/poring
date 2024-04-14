@@ -9,10 +9,9 @@ const PORT = 8000;
 const STATIC_ROUTES = [
   ["/lib/", "src/lib"],
   ["/tests/mocha/", "node_modules/mocha"],
-  ["/tests/chai/", "node_modules/chai"],
-  ["/tests/spec/", "src/spec"],
-  ["/tests/", "src/dev-server/static"],
-  ["/", "src/example"],
+  ["/tests/tests/", "src/tests"],
+  ["/tests/", "src/server/tests-static"],
+  ["/", "src/dev"],
 ];
 
 async function main() {
