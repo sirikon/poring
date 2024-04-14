@@ -3,9 +3,9 @@ describe("Signals", () => {
     poring
       .runScope({}, () => {
         const signal = poring.useSignal("a");
-        chai.expect(signal.get()).to.equal("a");
+        assertEqual(signal.get(), "a");
         signal.set("b");
-        chai.expect(signal.get()).to.equal("b");
+        assertEqual(signal.get(), "b");
       })
       .dispose();
   });
@@ -22,11 +22,11 @@ describe("Effects", () => {
           signal.get();
           execCount++;
         });
-        chai.expect(execCount).to.equal(1);
+        assertEqual(execCount, 1);
         signal.set("b");
-        chai.expect(execCount).to.equal(2);
+        assertEqual(execCount, 2);
         otherSignal.set("b");
-        chai.expect(execCount).to.equal(2);
+        assertEqual(execCount, 2);
       })
       .dispose();
   });
@@ -38,9 +38,9 @@ describe("Computed", () => {
       .runScope({}, () => {
         const signal = poring.useSignal(1);
         const computedSignal = poring.useComputed(() => signal.get() * 2);
-        chai.expect(computedSignal.get()).to.equal(2);
+        assertEqual(computedSignal.get(), 2);
         signal.set(2);
-        chai.expect(computedSignal.get()).to.equal(4);
+        assertEqual(computedSignal.get(), 4);
       })
       .dispose();
   });
