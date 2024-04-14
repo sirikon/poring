@@ -1,9 +1,4 @@
-const h = poring.h;
-const useSignal = poring.useSignal;
-const useEffect = poring.useEffect;
-const useComputed = poring.useComputed;
-const component = poring.component;
-const useRenderer = poring.useRenderer;
+const { h, component, useSignal, useEffect, useComputed, useRenderer } = poring;
 
 const userName = useSignal("John");
 const greeterEnabled = useSignal(false);

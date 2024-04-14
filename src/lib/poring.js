@@ -175,10 +175,11 @@ const poring = (() => {
 
   // #region Rendering
 
-  function h(tag, _attributes, _properties, _children) {
-    const attributes = _attributes || {};
-    const properties = _properties || {};
-    const children = _children || [];
+  function h() {
+    const tag = arguments[0];
+    const attributes = arguments[1] || {};
+    const properties = arguments[2] || {};
+    const children = arguments[arguments.length - 1] || [];
     return { tag, attributes, properties, children };
   }
 
