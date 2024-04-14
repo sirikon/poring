@@ -1,5 +1,5 @@
 import http from "node:http";
-import { join, extname } from "path";
+import { join, normalize, extname } from "path";
 import { readFile } from "fs";
 import { lookup } from "mime-types";
 
@@ -14,8 +14,8 @@ const STATIC_ROUTES = [
   ["/", "src/example"],
 ];
 
-async function main() {
-  startHttpServer(async (req, res) => {
+function main() {
+  startHttpServer((req, res) => {
     const url = new URL("internal:" + req.url).pathname;
     for (const [prefix, dir] of STATIC_ROUTES) {
       if (url === prefix.substring(0, prefix.length - 1)) {
@@ -46,7 +46,13 @@ function startHttpServer(handler) {
 
 function replyStatic(baseDir, _url, res) {
   const url = _url === "" ? "index.html" : _url;
-  const filePath = join(baseDir, url);
+  const filePath = normalize(join(baseDir, url));
+
+  if (!filePath.startsWith(baseDir)) {
+    replyNotFound(res);
+    return;
+  }
+
   readFile(filePath, (err, content) => {
     if (err) {
       if (err.code == "ENOENT") {
@@ -71,4 +77,4 @@ function replyError(res) {
   res.end("<h1>500: Server Error</h1>");
 }
 
-await main();
+main();
