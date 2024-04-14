@@ -175,162 +175,105 @@ const poring = (() => {
 
   // #region Rendering
 
-  const EVENT_LISTENER_ATTRIBUTES = ["onclick", "onchange", "oninput"];
+  function h(tag, _attributes, _properties, _children) {
+    const attributes = _attributes || {};
+    const properties = _properties || {};
+    const children = _children || [];
+    return { tag, attributes, properties, children };
+  }
 
-  const ELEMENT_ODDITIES = {
-    input: {
-      onBuild: (el, props) => {
-        if (props.type === "checkbox") {
-          props.checked
-            ? el.setAttribute("checked", "")
-            : el.removeAttribute("checked");
-          el.checked = !!props.checked;
-        }
-      },
-      onPatch: (oldEl, newEl) => {
-        const type = oldEl.getAttribute("type");
-        if (type === "text") {
-          if (oldEl.value !== newEl.value) {
-            oldEl.value = newEl.value;
-          }
-        }
-        if (type === "checkbox") {
-          oldEl.checked = newEl.checked;
-        }
-      },
-    },
-  };
-
-  function h(tag, _props, _children) {
-    const props = _props || {};
-    const children = normalizeChildren(_children);
-
-    const el = document.createElement(tag);
-
-    for (const key in props) {
-      if (EVENT_LISTENER_ATTRIBUTES.indexOf(key) >= 0) {
-        el[key] = props[key];
-      } else {
-        el.setAttribute(key, props[key]);
-      }
-    }
-    ELEMENT_ODDITIES[tag]?.onBuild(el, props);
-
-    for (const _child of children) {
-      if (_child == null || typeof _child === "boolean") {
+  function normalizeVNodes(_vNodes) {
+    const vNodes = Array.isArray(_vNodes) ? _vNodes : [_vNodes];
+    const result = [];
+    for (const vNode of vNodes) {
+      if (vNode == null) continue;
+      const vNodeType = typeof vNode;
+      if (!["string", "number", "object"].includes(vNodeType)) continue;
+      if (["string", "number"].includes(vNodeType)) {
+        result.push(vNode.toString());
         continue;
       }
-
-      const child = ["string", "number"].includes(typeof _child)
-        ? document.createTextNode(_child.toString())
-        : _child;
-      el.appendChild(child);
+      result.push({ ...vNode, children: normalizeVNodes(vNode.children) });
     }
-
-    return el;
+    return result;
   }
 
-  function normalizeChildren(children) {
-    if (Array.isArray(children)) {
-      return children;
-    }
-    if (children != null) {
-      return [children];
-    }
-    return [];
+  function getVNodeType(vNode) {
+    if (typeof vNode === "string") return "text";
+    return vNode.tag;
   }
 
-  function patchDom(root, content) {
-    if (content == null || (Array.isArray(content) && content.length === 0)) {
-      root.innerHTML = "";
+  function patchNode(rootNode, vNodes) {
+    if (vNodes.length === 0) {
+      if (rootNode.childNodes.length > 0) {
+        rootNode.innerHTML = "";
+      }
       return;
     }
 
-    const oldNodes = [...root.childNodes];
-    const newNodes = (Array.isArray(content) ? content : [content]).filter(
-      (n) => n != null && typeof n !== "boolean"
-    );
+    const nodes = [...rootNode.childNodes];
 
-    const leftOverElements = oldNodes.length - newNodes.length;
+    const leftOverElements = nodes.length - vNodes.length;
     for (let i = leftOverElements; i > 0; i--) {
-      const el = oldNodes[oldNodes.length - i];
-      el.parentNode.removeChild(el);
+      rootNode.removeChild(nodes[nodes.length - i]);
     }
 
-    for (const i in newNodes) {
-      const newNode = newNodes[i];
-      const oldNode = oldNodes[i];
+    for (const i in vNodes) {
+      const vNode = vNodes[i];
+      const vNodeType = getVNodeType(vNode);
+      let node = nodes[i];
 
-      if (!oldNode) {
-        root.appendChild(newNode);
-        continue;
+      if (!node) {
+        node = createNode(vNode);
+        rootNode.appendChild(node);
+      } else if (vNodeType !== getNodeType(node)) {
+        newNode = createNode(vNode);
+        rootNode.replaceChild(newNode, node);
+        node = newNode;
       }
 
-      const newNodeType = getNodeType(newNode);
-      const oldNodeType = getNodeType(oldNode);
-      if (newNodeType !== oldNodeType) {
-        oldNode.parentNode.replaceChild(newNode, oldNode);
-        continue;
-      }
-
-      if (!["text", "comment"].includes(newNodeType)) {
-        const newNodeAttributeNames = newNode.getAttributeNames();
-        const oldNodeAttributeNames = oldNode.getAttributeNames();
-        for (const attr of oldNodeAttributeNames) {
-          if (!newNodeAttributeNames.includes(attr)) {
-            oldNode.removeAttribute(attr);
-          }
+      if (vNodeType === "text") {
+        if (node.textContent !== vNode) {
+          node.textContent = vNode;
         }
-        for (const attr of newNodeAttributeNames) {
-          oldNode.setAttribute(attr, newNode.getAttribute(attr));
+        continue;
+      }
+
+      const vNodeAttributeNames = Object.keys(vNode.attributes);
+      const nodeAttributeNames = node.getAttributeNames();
+      for (const attr of nodeAttributeNames) {
+        if (!vNodeAttributeNames.includes(attr)) {
+          node.removeAttribute(attr);
+        }
+      }
+      for (const attr of vNodeAttributeNames) {
+        node.setAttribute(attr, vNode.attributes[attr]);
+      }
+
+      for (const key in vNode.properties) {
+        if (node[key] !== vNode.properties[key]) {
+          node[key] = vNode.properties[key];
         }
       }
 
-      if (oldNode instanceof PoringElement) {
+      if (node instanceof PoringElement) {
         continue;
       }
 
-      for (const event of EVENT_LISTENER_ATTRIBUTES) {
-        oldNode[event] = newNode[event];
-      }
-
-      const newNodeContent = getNodeTextContent(newNode);
-      if (
-        newNodeContent != null &&
-        newNodeContent !== getNodeTextContent(oldNode)
-      ) {
-        oldNode.textContent = newNodeContent;
-      }
-
-      ELEMENT_ODDITIES[newNodeType]?.onPatch(oldNode, newNode);
-
-      if (newNode.childNodes.length === 0) {
-        oldNode.innerHTML = "";
-        continue;
-      }
-
-      if (oldNode.childNodes.length === 0 && newNode.childNodes.length > 0) {
-        const fragment = document.createDocumentFragment();
-        patchDom(fragment, [...newNode.childNodes]);
-        oldNode.appendChild(fragment);
-        continue;
-      }
-
-      if (newNode.childNodes.length > 0) {
-        patchDom(oldNode, [...newNode.childNodes]);
-      }
+      patchNode(node, vNode.children);
     }
+  }
+
+  function createNode(vNode) {
+    return typeof vNode === "string"
+      ? document.createTextNode(vNode)
+      : document.createElement(vNode.tag);
   }
 
   function getNodeType(node) {
     if (node.nodeType === 3) return "text";
     if (node.nodeType === 8) return "comment";
     return node.tagName.toLowerCase();
-  }
-
-  function getNodeTextContent(node) {
-    if (node.childNodes && node.childNodes.length > 0) return null;
-    return node.textContent;
   }
 
   class PoringElement extends HTMLElement {}
@@ -379,7 +322,7 @@ const poring = (() => {
   }
 
   function useRenderer(cb) {
-    useBaseRenderer((c) => patchDom(c, cb()));
+    useBaseRenderer((c) => patchNode(c, normalizeVNodes(cb())));
   }
 
   // #endregion
@@ -394,6 +337,6 @@ const poring = (() => {
     h,
     useBaseRenderer,
     useRenderer,
-    patchDom,
+    patchNode,
   };
 })();
