@@ -8,16 +8,21 @@ const PORT = 8000;
 
 const STATIC_ROUTES = [
   ["/lib/", "src/lib"],
-  ["/tests/mocha/", "node_modules/mocha"],
-  ["/tests/tests/", "src/tests"],
-  ["/tests/", "src/server/tests-static"],
-  ["/", "src/dev"],
+  ["/node_modules/mocha/", "node_modules/mocha"],
+  ["/tests/specs/", "src/tests"],
+  ["/tests/", "src/devserver/tests-static"],
+  ["/", "src/example"],
 ];
 
 async function main() {
   startHttpServer(async (req, res) => {
     const url = new URL("internal:" + req.url).pathname;
     for (const [prefix, dir] of STATIC_ROUTES) {
+      if (url === prefix.substring(0, prefix.length - 1)) {
+        res.writeHead(302, { Location: prefix });
+        res.end();
+        return;
+      }
       if (url.startsWith(prefix)) {
         replyStatic(dir, url.substring(prefix.length), res);
         return;
