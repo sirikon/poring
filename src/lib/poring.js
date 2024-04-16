@@ -252,7 +252,7 @@ const poring = (() => {
         node = createNode(vNode);
         rootNode.appendChild(node);
       } else if (vNodeType !== getNodeType(node)) {
-        newNode = createNode(vNode);
+        const newNode = createNode(vNode);
         rootNode.replaceChild(newNode, node);
         node = newNode;
       }
