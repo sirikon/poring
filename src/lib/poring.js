@@ -1,5 +1,9 @@
 "use strict";
-
+/**
+ * Poring - https://github.com/sirikon/poring
+ * Author: Carlos Fdez. Llamas <hello@sirikon.me>
+ * License: GPL-3.0 https://github.com/sirikon/poring/blob/master/LICENSE
+ */
 const poring = (() => {
   // #region Signals
 
