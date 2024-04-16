@@ -1,6 +1,6 @@
-<img src="assets/logo.svg" align="right" style="height:120px;">
-
 # Poring
+
+<img src="assets/logo.svg" align="right" style="height:120px;">
 
 > [!WARNING]  
 > Work in progress. Rough edges and no documentation.
