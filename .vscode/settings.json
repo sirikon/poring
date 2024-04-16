@@ -1,11 +1,6 @@
 {
   "editor.detectIndentation": false,
   "editor.tabSize": 2,
-  "[markdown]": {
-    "editor.wordWrap": "wordWrapColumn",
-    "editor.wrappingIndent": "same",
-    "editor.wordWrapColumn": 80
-  },
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -17,5 +12,10 @@
   },
   "[html]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.wordWrap": "wordWrapColumn",
+    "editor.wrappingIndent": "same",
+    "editor.wordWrapColumn": 80
   }
 }
