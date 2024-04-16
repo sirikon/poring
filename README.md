@@ -1,4 +1,4 @@
-<img src="assets/logo.svg" style="float:right;height:120px;">
+<img src="assets/logo.svg" align="right" style="height:120px;">
 
 # Poring
 
