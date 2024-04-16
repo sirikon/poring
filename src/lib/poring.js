@@ -45,13 +45,13 @@ const poring = (() => {
       }
     }
 
-    listen(cb) {
+    subscribe(cb) {
       if (this.listeners.indexOf(cb) === -1) {
         this.listeners.push(cb);
       }
     }
 
-    unlisten(cb) {
+    unsubscribe(cb) {
       const pos = this.listeners.indexOf(cb);
       if (pos >= 0) {
         this.listeners.splice(pos, 1);
@@ -94,14 +94,14 @@ const poring = (() => {
       for (let i = dependedSignals.length - 1; i >= 0; i--) {
         const signal = dependedSignals[i];
         if (newDependedSignals.indexOf(signal) === -1) {
-          signal.unlisten(execute);
+          signal.unsubscribe(execute);
           dependedSignals.splice(i, 1);
         }
       }
 
       for (const signal of newDependedSignals) {
         if (dependedSignals.indexOf(signal) === -1) {
-          signal.listen(execute);
+          signal.subscribe(execute);
           dependedSignals.push(signal);
         }
       }
@@ -109,7 +109,7 @@ const poring = (() => {
 
     function dispose() {
       for (const signal of dependedSignals) {
-        signal.unlisten(execute);
+        signal.unsubscribe(execute);
       }
       dependedSignals.splice(0, dependedSignals.length);
       cleanup();
